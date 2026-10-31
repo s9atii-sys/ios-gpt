@@ -1,0 +1,48 @@
+
+workflows:
+  godot-ios-testflight:
+    name: Godot iOS - TestFlight
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+
+    integrations:
+      app_store_connect: MiniMuse Play
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.orderedltds.minimuse
+
+      xcode: latest
+
+    scripts:
+      - name: Check project files
+        script: |
+          ls -la
+          test -d mi.xcodeproj
+          test -f admob_spm/Package.swift
+
+      - name: Configure automatic signing
+        script: |
+          xcode-project use-profiles
+
+      - name: Resolve AdMob Swift Packages
+        script: |
+          xcodebuild -resolvePackageDependencies \
+            -project mi.xcodeproj \
+            -scheme mi
+
+      - name: Build signed IPA
+        script: |
+          xcode-project build-ipa \
+            --project mi.xcodeproj \
+            --scheme mi
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
